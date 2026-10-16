@@ -11,7 +11,7 @@ Item {
     property string fontFamily: "sans-serif"
     property bool popupOpen: false
     property real displayedPosition: 0
-    readonly property real itemSpacing: 2.21
+    readonly property real itemSpacing: 1.547
     readonly property color backdrop: hostBar && hostBar.background !== undefined ? hostBar.background : "#1b1d2a"
     readonly property int buttonSize: compact ? 22 : 26
     signal expandRequested()
@@ -49,11 +49,11 @@ Item {
                 onExited: if (root.hostBar && typeof root.hostBar.hideTooltip === "function") root.hostBar.hideTooltip(root)
             }
         }
-        DeskbandButton { width: root.buttonSize; height: root.compact ? 20 : 24; anchors.verticalCenter: parent.verticalCenter; glyph: "󰒮"; label: "Faixa anterior"; enabled: !!(root.controller.player && root.controller.player.canGoPrevious); foreground: root.foreground; accent: root.accent; fontFamily: root.fontFamily; hostBar: root.hostBar; onClicked: root.controller.previous() }
-        DeskbandButton { width: root.buttonSize; height: root.compact ? 20 : 24; anchors.verticalCenter: parent.verticalCenter; glyph: root.controller.playing ? "󰏤" : "󰐊"; label: root.controller.playing ? "Pausar" : "Reproduzir"; enabled: root.controller.canToggle; foreground: root.foreground; accent: root.accent; fontFamily: root.fontFamily; hostBar: root.hostBar; onClicked: root.controller.togglePlaying() }
-        DeskbandButton { width: root.buttonSize; height: root.compact ? 20 : 24; anchors.verticalCenter: parent.verticalCenter; glyph: "󰒭"; label: "Próxima faixa"; enabled: !!(root.controller.player && root.controller.player.canGoNext); foreground: root.foreground; accent: root.accent; fontFamily: root.fontFamily; hostBar: root.hostBar; onClicked: root.controller.next() }
-        DeskbandButton { width: root.buttonSize; height: root.compact ? 20 : 24; anchors.verticalCenter: parent.verticalCenter; glyph: "󰒟"; label: root.controller.canShuffle ? "Alternar aleatório" : "Aleatório indisponível neste player"; enabled: root.controller.canShuffle; selected: !!(root.controller.player && root.controller.player.shuffle); foreground: root.foreground; accent: root.accent; fontFamily: root.fontFamily; hostBar: root.hostBar; onClicked: root.controller.toggleShuffle() }
-        DeskbandButton { width: root.buttonSize; height: root.compact ? 20 : 24; anchors.verticalCenter: parent.verticalCenter; glyph: root.popupOpen ? "⌄" : "⌃"; label: "Expandir player"; selected: root.popupOpen; foreground: root.foreground; accent: root.accent; fontFamily: root.fontFamily; hostBar: root.hostBar; onClicked: root.expandRequested() }
+        DeskbandButton { width: root.buttonSize; height: root.compact ? 20 : 24; anchors.verticalCenter: parent.verticalCenter; glyph: "󰒮"; label: "Faixa anterior"; enabled: !!(root.controller.player && root.controller.player.canGoPrevious); foreground: root.foreground; accent: root.accent; fontFamily: root.fontFamily; glyphScale: 0.85; hostBar: root.hostBar; onClicked: root.controller.previous() }
+        DeskbandButton { width: root.buttonSize; height: root.compact ? 20 : 24; anchors.verticalCenter: parent.verticalCenter; glyph: root.controller.playing ? "󰏤" : "󰐊"; label: root.controller.playing ? "Pausar" : "Reproduzir"; enabled: root.controller.canToggle; foreground: root.foreground; accent: root.accent; fontFamily: root.fontFamily; glyphScale: 0.85; hostBar: root.hostBar; onClicked: root.controller.togglePlaying() }
+        DeskbandButton { width: root.buttonSize; height: root.compact ? 20 : 24; anchors.verticalCenter: parent.verticalCenter; glyph: "󰒭"; label: "Próxima faixa"; enabled: !!(root.controller.player && root.controller.player.canGoNext); foreground: root.foreground; accent: root.accent; fontFamily: root.fontFamily; glyphScale: 0.85; hostBar: root.hostBar; onClicked: root.controller.next() }
+        DeskbandButton { width: root.buttonSize; height: root.compact ? 20 : 24; anchors.verticalCenter: parent.verticalCenter; glyph: "󰒟"; label: root.controller.canShuffle ? "Alternar aleatório" : "Aleatório indisponível neste player"; enabled: root.controller.canShuffle; selected: !!(root.controller.player && root.controller.player.shuffle); foreground: root.foreground; accent: root.accent; fontFamily: root.fontFamily; glyphScale: 0.85; hostBar: root.hostBar; onClicked: root.controller.toggleShuffle() }
+        DeskbandButton { width: root.buttonSize; height: root.compact ? 20 : 24; anchors.verticalCenter: parent.verticalCenter; glyph: root.popupOpen ? "⌄" : "⌃"; label: "Expandir player"; selected: root.popupOpen; foreground: root.foreground; accent: root.accent; fontFamily: root.fontFamily; glyphScale: 0.85; hostBar: root.hostBar; onClicked: root.expandRequested() }
     }
     DeskbandSlider {
         id: progress

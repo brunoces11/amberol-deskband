@@ -8,6 +8,7 @@ Item {
     property color foreground: "#eeeeee"
     property color accent: "#e5b567"
     property string fontFamily: "sans-serif"
+    property real glyphScale: 1
     property bool selected: false
     property var hostBar: null
     property var registeredHost: null
@@ -39,11 +40,13 @@ Item {
         border.color: root.accent
     }
     Text {
-        anchors.centerIn: parent
+        anchors.fill: parent
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
         text: root.glyph
         textFormat: Text.PlainText
         font.family: root.fontFamily
-        font.pixelSize: Math.min(16, root.height - 4)
+        font.pixelSize: Math.min(16 * root.glyphScale, root.height - 4)
         color: root.selected ? root.accent : root.foreground
     }
     MouseArea {
