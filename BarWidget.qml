@@ -15,7 +15,7 @@ Item {
     readonly property var controller: media
     property alias panel: popup
     property bool opened: false
-    readonly property real expandedWidth: Math.max(240, Math.min(480, Number(settings.width) || (compact ? 280 : 340)))
+    readonly property real expandedWidth: Math.max(compact ? 200 : 240, Math.min(374.4, Number(settings.width) || (compact ? 218.4 : 265.2)))
     implicitWidth: media.hasMedia && !vertical ? expandedWidth : 0
     implicitHeight: compact ? Math.max(20, bar ? bar.barSize : 24) : 42
     visible: implicitWidth > 0

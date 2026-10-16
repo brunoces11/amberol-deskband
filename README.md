@@ -36,7 +36,7 @@ The capsule remains present for a paused track. Its chevron opens a panel with c
 
 Amberol takes priority while running, including when paused. An open Amberol with no track collapses the capsule. When Amberol is absent, a controllable MPRIS player with a track is selected, preferring a playing source and using a stable name order to break ties. Disconnection collapses the widget and closes the panel; reconnection is handled reactively.
 
-For the top bar, the JSON layout entry accepts `width` (240–480 pixels) and `fallback` (boolean). A compact default is 280 pixels and a full default is 340 pixels. The same QML components are used by both hosts.
+For the top bar, the JSON layout entry accepts `width` (up to 374.4 pixels) and `fallback` (boolean). A compact default is 218.4 pixels (minimum 200) and a full default is 265.2 pixels (minimum 240). The capsule uses a neutral gray background 10% brighter than the previous surface, with 3.4-pixel spacing between items. The same QML components are used by both hosts.
 
 ## Amberol 2026.1 protocol limits
 

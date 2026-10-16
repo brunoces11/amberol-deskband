@@ -33,3 +33,12 @@ function selectPlayer(players, fallback) {
 }
 
 function alpha(color, opacity) { return Qt.rgba(color.r, color.g, color.b, opacity); }
+
+// Preserve the old surface's relative brightness, then neutralize its tint.
+function lighterGraySurface(background, foreground, opacity, factor) {
+    var r = background.r * (1 - opacity) + foreground.r * opacity;
+    var g = background.g * (1 - opacity) + foreground.g * opacity;
+    var b = background.b * (1 - opacity) + foreground.b * opacity;
+    var gray = Math.min(1, (0.2126 * r + 0.7152 * g + 0.0722 * b) * factor);
+    return Qt.rgba(gray, gray, gray, 1);
+}

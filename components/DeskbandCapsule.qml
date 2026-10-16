@@ -10,6 +10,8 @@ Item {
     property color accent: "#e5b567"
     property string fontFamily: "sans-serif"
     property bool popupOpen: false
+    readonly property real itemSpacing: 3.4
+    readonly property color backdrop: hostBar && hostBar.background !== undefined ? hostBar.background : "#1b1d2a"
     readonly property int artSize: compact ? 18 : 28
     readonly property int buttonSize: compact ? 22 : 26
     signal expandRequested()
@@ -18,17 +20,17 @@ Item {
         anchors.fill: parent
         anchors.margins: 2
         radius: Math.min(12, height / 2)
-        color: Colors.alpha(root.foreground, 0.055)
+        color: Colors.lighterGraySurface(root.backdrop, root.foreground, 0.055, 1.10)
         border.width: 1
         border.color: Colors.alpha(root.foreground, 0.12)
     }
     Row {
         anchors.verticalCenter: parent.verticalCenter
         x: 8
-        spacing: 4
+        spacing: root.itemSpacing
         AlbumArt { width: root.artSize; height: width; anchors.verticalCenter: parent.verticalCenter; source: root.controller.artUrl; foreground: root.foreground }
         Item {
-            width: Math.max(24, root.width - 16 - root.artSize - root.buttonSize * 5 - 24)
+            width: Math.max(24, root.width - 16 - root.artSize - root.buttonSize * 5 - root.itemSpacing * 6)
             height: root.compact ? 18 : 30
             anchors.verticalCenter: parent.verticalCenter
             Column {
