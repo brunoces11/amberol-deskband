@@ -13,7 +13,6 @@ Item {
     property real displayedPosition: 0
     readonly property real itemSpacing: 3.4
     readonly property color backdrop: hostBar && hostBar.background !== undefined ? hostBar.background : "#1b1d2a"
-    readonly property int artSize: compact ? 18 : 24
     readonly property int buttonSize: compact ? 22 : 26
     signal expandRequested()
     signal seekStarted()
@@ -33,9 +32,8 @@ Item {
         x: 8
         height: root.compact ? parent.height : 26
         spacing: root.itemSpacing
-        AlbumArt { width: root.artSize; height: width; anchors.verticalCenter: parent.verticalCenter; source: root.controller.artUrl; foreground: root.foreground }
         Item {
-            width: Math.max(24, root.width - 16 - root.artSize - root.buttonSize * 5 - root.itemSpacing * 6)
+            width: Math.max(24, root.width - 16 - root.buttonSize * 5 - root.itemSpacing * 6)
             height: root.compact ? 18 : 30
             anchors.verticalCenter: parent.verticalCenter
             Column {
@@ -43,7 +41,7 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 1
                 Text { width: parent.width; text: root.controller.title; textFormat: Text.PlainText; elide: Text.ElideRight; color: root.foreground; font.family: root.fontFamily; font.pixelSize: root.compact ? 10 : 11; font.weight: Font.Medium }
-                Text { width: parent.width; visible: !root.compact; text: root.controller.artist; textFormat: Text.PlainText; elide: Text.ElideRight; color: Colors.alpha(root.foreground, 0.64); font.family: root.fontFamily; font.pixelSize: 10 }
+                Text { width: parent.width; visible: !root.compact; text: root.controller.artist; textFormat: Text.PlainText; elide: Text.ElideRight; color: Colors.alpha(root.foreground, 0.64); font.family: root.fontFamily; font.pixelSize: 8 }
             }
             MouseArea {
                 anchors.fill: parent; hoverEnabled: true; acceptedButtons: Qt.NoButton

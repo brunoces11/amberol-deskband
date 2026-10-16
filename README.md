@@ -1,6 +1,6 @@
 # Amberol Deskband
 
-A single music capsule for **Omarchy Quattro** and the customized **WinDoc / Omarchy Dock** host. Album art, track and artist, previous/play/next, compact seek and a popup listing the playlist saved by Amberol. Written in QML, using Quickshell services; no changes to Amberol are required.
+A single music capsule for **Omarchy Quattro** and the customized **WinDoc / Omarchy Dock** host. Track and artist, previous/play/next, compact seek and a popup listing the playlist saved by Amberol. Written in QML, using Quickshell services; no changes to Amberol are required.
 
 ![Amberol Deskband running in WinDoc](preview.png)
 
@@ -32,7 +32,7 @@ Installation refuses unmanaged path collisions and an unsupported WinDoc host. T
 
 ## Controls and player selection
 
-The capsule remains present for a paused track. In the WinDoc dock, a compact draggable progress bar sits below the controls; the top bar keeps its existing single-line height. The chevron opens a scrollable list from Amberol's saved playlist. The list refreshes when opened and when Amberol updates the playlist file. It shows filenames in the last saved playlist order; it cannot promise the exact upcoming order after shuffle, and entries cannot be selected because Amberol does not expose MPRIS TrackList controls. Click outside or use the close button to dismiss it. Long titles use an ellipsis; hover shows the full title with the host tooltip.
+The capsule remains present for a paused track and omits album art to give more room to the title. The artist line uses a 20% smaller font. In the WinDoc dock, a compact draggable progress bar sits below the controls; the top bar keeps its existing single-line height. The chevron opens a scrollable list from Amberol's saved playlist. The list refreshes when opened and when Amberol updates the playlist file. It shows filenames in the last saved playlist order; it cannot promise the exact upcoming order after shuffle. Track selection is unavailable with Amberol 2026.1 because it does not expose MPRIS TrackList controls or a working URI-open action. Click outside or use the close button to dismiss it. Long titles use an ellipsis; hover shows the full title with the host tooltip.
 
 Amberol takes priority while running, including when paused. An open Amberol with no track collapses the capsule. When Amberol is absent, a controllable MPRIS player with a track is selected, preferring a playing source and using a stable name order to break ties. Disconnection collapses the widget and closes the panel; reconnection is handled reactively.
 
