@@ -11,7 +11,7 @@ Item {
     property string fontFamily: "sans-serif"
     property bool popupOpen: false
     property real displayedPosition: 0
-    readonly property real itemSpacing: 3.4
+    readonly property real itemSpacing: 2.21
     readonly property color backdrop: hostBar && hostBar.background !== undefined ? hostBar.background : "#1b1d2a"
     readonly property int buttonSize: compact ? 22 : 26
     signal expandRequested()
@@ -39,8 +39,8 @@ Item {
             Column {
                 width: parent.width
                 anchors.verticalCenter: parent.verticalCenter
-                spacing: 1
-                Text { width: parent.width; text: root.controller.title; textFormat: Text.PlainText; elide: Text.ElideRight; color: root.foreground; font.family: root.fontFamily; font.pixelSize: root.compact ? 10 : 11; font.weight: Font.Medium }
+                spacing: 0.93
+                Text { width: parent.width; text: root.controller.title; textFormat: Text.PlainText; elide: Text.ElideRight; color: root.foreground; font.family: root.fontFamily; font.pixelSize: root.compact ? 9 : 10; font.weight: Font.Medium }
                 Text { width: parent.width; visible: !root.compact; text: root.controller.artist; textFormat: Text.PlainText; elide: Text.ElideRight; color: Colors.alpha(root.foreground, 0.64); font.family: root.fontFamily; font.pixelSize: 8 }
             }
             MouseArea {
