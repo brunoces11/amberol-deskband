@@ -38,6 +38,22 @@ function parseSavedPlaylist(contents) {
     return result;
 }
 
+function normalizeTrackTitle(value) {
+    return String(value || "")
+        .replace(/\.[^.\/]+$/, "")
+        .replace(/^\s*\d+\s*[-._)]?\s*/, "")
+        .trim()
+        .toLocaleLowerCase();
+}
+
+// Amberol does not publish the current file URI through MPRIS. Compare visible
+// titles as a best-effort highlight; duplicate titles can match ambiguously.
+function sameTrackTitle(playlistTitle, currentTitle) {
+    var playlist = normalizeTrackTitle(playlistTitle);
+    var current = normalizeTrackTitle(currentTitle);
+    return !!playlist && !!current && playlist === current;
+}
+
 function selectPlayer(players, fallback) {
     var amberol = [], others = [];
     for (var i = 0; i < players.length; i++) {

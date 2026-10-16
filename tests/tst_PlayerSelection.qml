@@ -43,6 +43,12 @@ TestCase {
         compare(tracks[0].title, "01 Anunciação");
         compare(tracks[1].title, "02 Céu Azul");
     }
+    function test_current_track_highlight_matches_normalized_filename() {
+        verify(Util.sameTrackTitle("03 - Céu Azul.mp3", "Céu Azul"));
+        verify(Util.sameTrackTitle("01_Anunciação.flac", "anunciação"));
+        verify(!Util.sameTrackTitle("Céu Azul", "Outro Lugar"));
+        verify(!Util.sameTrackTitle("", "Outro Lugar"));
+    }
     function test_saved_playlist_skips_missing_entries() {
         var tracks = Util.parseSavedPlaylist("NumberOfEntries=3\nFile0=/music/a.ogg\nFile2=/music/c.flac\n");
         compare(tracks.length, 2);

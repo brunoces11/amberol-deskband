@@ -104,18 +104,21 @@ PopupWindow {
                 DeskbandButton { width: 30; height: 26; glyph: "×"; label: "Fechar"; foreground: root.foreground; onClicked: root.closeRequested() }
             }
             ListView {
-                width: parent.width; height: 294; clip: true; model: playlistModel; spacing: 2
+                width: parent.width; height: 294; clip: true; model: playlistModel; spacing: 1
                 ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
                 delegate: Rectangle {
                     required property int index
                     required property int number
                     required property string title
-                    width: ListView.view.width; height: 34; radius: 6
-                    color: "transparent"
+                    width: ListView.view.width; height: 27; radius: 6
+                    readonly property bool isCurrentTrack: Util.sameTrackTitle(title, root.controller.title)
+                    color: isCurrentTrack ? Colors.alpha("#3988ff", 0.24) : "transparent"
+                    border.width: isCurrentTrack ? 1 : 0
+                    border.color: Colors.alpha("#3988ff", 0.78)
                     Row {
-                        anchors.fill: parent; anchors.leftMargin: 8; anchors.rightMargin: 8; spacing: 10
-                        Text { width: 24; height: parent.height; verticalAlignment: Text.AlignVCenter; text: String(number).padStart(2, "0"); color: Colors.alpha(root.foreground, 0.5); font.family: root.fontFamily; font.pixelSize: 10 }
-                        Text { width: parent.width - 42; height: parent.height; verticalAlignment: Text.AlignVCenter; text: title; textFormat: Text.PlainText; elide: Text.ElideRight; color: root.foreground; font.family: root.fontFamily; font.pixelSize: 11 }
+                        anchors.fill: parent; anchors.leftMargin: 6; anchors.rightMargin: 6; spacing: 8
+                        Text { width: 24; height: parent.height; verticalAlignment: Text.AlignVCenter; text: String(number).padStart(2, "0"); color: parent.parent.isCurrentTrack ? "#8bbcff" : Colors.alpha(root.foreground, 0.5); font.family: root.fontFamily; font.pixelSize: 10 }
+                        Text { width: parent.width - 42; height: parent.height; verticalAlignment: Text.AlignVCenter; text: title; textFormat: Text.PlainText; elide: Text.ElideRight; color: parent.parent.isCurrentTrack ? "#a9ceff" : root.foreground; font.family: root.fontFamily; font.pixelSize: 11; font.weight: parent.parent.isCurrentTrack ? Font.DemiBold : Font.Normal }
                     }
                 }
             }
