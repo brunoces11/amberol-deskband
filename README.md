@@ -1,6 +1,6 @@
 # Amberol Deskband
 
-A single music capsule for **Omarchy Quattro** and the customized **WinDoc / Omarchy Dock** host. Album art, track and artist, previous/play/next, a floating seek panel and volume for the selected player. Written in QML, using Quickshell services; no changes to Amberol are required.
+A single music capsule for **Omarchy Quattro** and the customized **WinDoc / Omarchy Dock** host. Album art, track and artist, previous/play/next, compact seek and a popup listing the playlist saved by Amberol. Written in QML, using Quickshell services; no changes to Amberol are required.
 
 ![Amberol Deskband running in WinDoc](preview.png)
 
@@ -32,11 +32,11 @@ Installation refuses unmanaged path collisions and an unsupported WinDoc host. T
 
 ## Controls and player selection
 
-The capsule remains present for a paused track. Its chevron opens a panel with cover art, progress, playback controls and a player-specific volume slider. Click outside or use the close button to dismiss it. Long titles use an ellipsis; hover shows the full title with the host tooltip.
+The capsule remains present for a paused track. In the WinDoc dock, a compact draggable progress bar sits below the controls; the top bar keeps its existing single-line height. The chevron opens a scrollable list from Amberol's saved playlist. The list refreshes when opened and when Amberol updates the playlist file. It shows filenames in the last saved playlist order; it cannot promise the exact upcoming order after shuffle, and entries cannot be selected because Amberol does not expose MPRIS TrackList controls. Click outside or use the close button to dismiss it. Long titles use an ellipsis; hover shows the full title with the host tooltip.
 
 Amberol takes priority while running, including when paused. An open Amberol with no track collapses the capsule. When Amberol is absent, a controllable MPRIS player with a track is selected, preferring a playing source and using a stable name order to break ties. Disconnection collapses the widget and closes the panel; reconnection is handled reactively.
 
-For the top bar, the JSON layout entry accepts `width` (up to 374.4 pixels) and `fallback` (boolean). A compact default is 218.4 pixels (minimum 200) and a full default is 265.2 pixels (minimum 240). The capsule uses a neutral gray background 10% brighter than the previous surface, with 3.4-pixel spacing between items. The same QML components are used by both hosts.
+For the top bar, the JSON layout entry accepts `width` (up to 374.4 pixels) and `fallback` (boolean). A compact default is 218.4 pixels (minimum 200) and a full default is 265.2 pixels (minimum 240). The capsule uses a neutral gray background 15% brighter than its previous surface, with 3.4-pixel spacing between items. The same QML components are used by both hosts.
 
 ## Amberol 2026.1 protocol limits
 
@@ -46,7 +46,7 @@ This Amberol version advertises MPRIS properties that do not have working setter
 - **Seek:** uses relative MPRIS `Seek` for Amberol, because `SetPosition` is not implemented. After switching tracks while paused, the decoder may not have a stream yet; seek becomes available after playback initializes it. Other players use absolute position.
 - **Shuffle:** the stock Amberol 2026.1 does not implement MPRIS shuffle commands or publish its shuffle state. The shuffle button is disabled for this version. Supported fallback players retain their MPRIS shuffle button. A future/custom Amberol build with a complete MPRIS implementation may opt in with the top-bar setting `amberolMprisShuffle: true`; this option is not suitable for stock 2026.1.
 
-The progress display updates locally every 500 ms only while the panel is visible and playback is active. Metadata uses native service bindings. There is no continuous process polling and no promise of literally zero CPU during rendering or animations.
+The compact progress display updates locally every 500 ms while the capsule is visible and playback is active. The playlist uses Quickshell's file watcher instead of a polling loop. Metadata uses native service bindings. There is no continuous process polling and no promise of literally zero CPU during rendering or animations.
 
 ## Remove
 

@@ -2,15 +2,15 @@
   "schemaVersion": 1,
   "id": "amberol-deskband",
   "name": "Amberol Deskband",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "author": "Bruno Cesar",
   "license": "MIT",
-  "description": "A compact MPRIS music capsule for Omarchy Quattro and WinDoc",
+  "description": "A compact MPRIS music capsule with progress and playlist for Omarchy Quattro and WinDoc",
   "kinds": ["bar-widget"],
   "entryPoints": {"barWidget": "BarWidget.qml"},
   "barWidget": {
     "displayName": "Amberol Deskband",
-    "description": "Album art, playback, shuffle, seek and player volume",
+    "description": "Album art, playback, compact progress and loaded playlist",
     "category": "Media",
     "allowMultiple": false,
     "defaultSection": "right"

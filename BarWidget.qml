@@ -16,6 +16,8 @@ Item {
     property alias panel: popup
     property bool opened: false
     readonly property real expandedWidth: Math.max(compact ? 200 : 240, Math.min(374.4, Number(settings.width) || (compact ? 218.4 : 265.2)))
+    property real displayedPosition: media.player ? media.player.position : 0
+    property string seekTrack: ""
     implicitWidth: media.hasMedia && !vertical ? expandedWidth : 0
     implicitHeight: compact ? Math.max(20, bar ? bar.barSize : 24) : 42
     visible: implicitWidth > 0
@@ -33,6 +35,19 @@ Item {
         target: media
         function onHasMediaChanged() { if (!media.hasMedia) root.close(); }
         function onPlayerChanged() { root.close(); }
+        function onTrackKeyChanged() { root.displayedPosition = media.player ? media.player.position : 0; }
+    }
+    Connections {
+        target: media.player
+        ignoreUnknownSignals: true
+        function onPositionChanged() { root.displayedPosition = media.player ? media.player.position : 0; }
+        function onIsPlayingChanged() { root.displayedPosition = media.player ? media.player.position : 0; }
+    }
+    Timer {
+        interval: 500
+        repeat: true
+        running: root.visible && media.playing && !capsule.seeking
+        onTriggered: root.displayedPosition = media.player ? media.player.position : 0
     }
     Connections {
         target: root.bar
@@ -44,6 +59,7 @@ Item {
     }
     AmberolController { id: media; fallbackEnabled: root.settings.fallback !== false; amberolShuffleEnabled: root.settings.amberolMprisShuffle === true }
     DeskbandCapsule {
+        id: capsule
         width: root.expandedWidth
         height: parent.height
         controller: media
@@ -53,7 +69,10 @@ Item {
         accent: root.accent
         fontFamily: root.fontFamily
         popupOpen: root.opened
+        displayedPosition: root.displayedPosition
         onExpandRequested: root.togglePanel()
+        onSeekStarted: root.seekTrack = media.trackKey
+        onSeekCommitted: function(value) { media.seekTo(value, root.seekTrack || media.trackKey); root.seekTrack = ""; root.displayedPosition = media.player ? media.player.position : 0; }
     }
     DeskbandPopup {
         id: popup
@@ -65,6 +84,7 @@ Item {
         accent: root.accent
         fontFamily: root.fontFamily
         background: root.bar && root.bar.popupBackground !== undefined ? root.bar.popupBackground : "#202126"
+        displayedPosition: root.displayedPosition
         onCloseRequested: root.close()
     }
 }

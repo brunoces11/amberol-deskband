@@ -1,7 +1,9 @@
 import QtQuick
+import QtQuick.Controls
 import "AmberolController.js" as Colors
 import Quickshell
 import Quickshell.Hyprland
+import Quickshell.Io
 import "AmberolController.js" as Util
 
 PopupWindow {
@@ -15,18 +17,52 @@ PopupWindow {
     property color background: "#202126"
     property string fontFamily: "sans-serif"
     property real displayedPosition: 0
-    property string seekTrack: ""
-    property var volumePlayer: null
+    property string playlistStatus: "Carregando playlist do Amberol…"
+    property string playlistPath: (Quickshell.env("XDG_CACHE_HOME") || (Quickshell.env("HOME") + "/.cache")) + "/amberol/playlists/current.pls"
+    property bool triedFlatpakCache: false
+    ListModel { id: playlistModel }
     readonly property var anchorWindow: anchorItem ? anchorItem.QsWindow.window : null
     readonly property string position: hostBar && hostBar.position ? hostBar.position : "top"
     signal closeRequested()
+    function refreshPlaylist() {
+        if (!controller.amberolSelected) {
+            playlistModel.clear();
+            playlistStatus = "A lista local está disponível apenas para o Amberol";
+            return;
+        }
+        playlistFile.reload();
+    }
+    function loadPlaylist(contents) {
+        playlistModel.clear();
+        var entries = Util.parseSavedPlaylist(contents);
+        for (var i = 0; i < entries.length; i++) playlistModel.append(entries[i]);
+        playlistStatus = entries.length ? "Playlist salva pelo Amberol · " + entries.length + " músicas" : "Nenhuma música carregada encontrada";
+    }
     function refreshPosition() { displayedPosition = controller.player ? controller.player.position : 0; }
     function close() { closeRequested(); }
     visible: open && anchorWindow !== null
     color: "transparent"
-    implicitWidth: 320
+    implicitWidth: 340
     implicitHeight: 390
-    onOpenChanged: if (open) refreshPosition()
+    onOpenChanged: if (open) refreshPlaylist()
+    FileView {
+        id: playlistFile
+        path: root.playlistPath
+        watchChanges: true
+        printErrors: false
+        onLoaded: root.loadPlaylist(text())
+        onFileChanged: if (root.open) reload()
+        onLoadFailed: {
+            if (!root.triedFlatpakCache) {
+                root.triedFlatpakCache = true;
+                root.playlistPath = Quickshell.env("HOME") + "/.var/app/io.bassi.Amberol/cache/amberol/playlists/current.pls";
+                reload();
+            } else {
+                playlistModel.clear();
+                root.playlistStatus = "O Amberol ainda não salvou uma playlist";
+            }
+        }
+    }
     anchor {
         window: root.anchorWindow
         edges: Edges.Top | Edges.Left
@@ -48,19 +84,6 @@ PopupWindow {
         windows: root.anchorWindow ? [root, root.anchorWindow] : [root]
         onCleared: root.closeRequested()
     }
-    Timer {
-        interval: 500
-        repeat: true
-        running: root.visible && root.controller.playing && !seek.dragging
-        onTriggered: root.refreshPosition()
-    }
-    Connections {
-        target: root.controller.player
-        ignoreUnknownSignals: true
-        function onPositionChanged() { root.refreshPosition(); }
-        function onIsPlayingChanged() { root.refreshPosition(); }
-    }
-    Connections { target: root.controller; function onTrackKeyChanged() { root.refreshPosition(); } }
     Rectangle {
         anchors.fill: parent
         radius: 10
@@ -70,51 +93,34 @@ PopupWindow {
         focus: root.open
         Keys.onEscapePressed: root.closeRequested()
         Column {
-            x: 16; y: 14; width: parent.width - 32; spacing: 7
-            Item {
-                width: parent.width; height: 156
-                AlbumArt { anchors.horizontalCenter: parent.horizontalCenter; width: 156; height: 156; radius: 8; source: root.controller.artUrl; foreground: root.foreground }
-                DeskbandButton { anchors.right: parent.right; glyph: "×"; label: "Fechar"; foreground: root.foreground; onClicked: root.closeRequested() }
-            }
-            Text { width: parent.width; height: 18; text: root.controller.title; textFormat: Text.PlainText; elide: Text.ElideRight; color: root.foreground; font.family: root.fontFamily; font.pixelSize: 13; font.weight: Font.DemiBold; horizontalAlignment: Text.AlignHCenter }
-            Text { width: parent.width; height: 15; text: root.controller.artist; textFormat: Text.PlainText; elide: Text.ElideRight; color: Colors.alpha(root.foreground, 0.66); font.family: root.fontFamily; font.pixelSize: 11; horizontalAlignment: Text.AlignHCenter }
-            DeskbandSlider {
-                id: seek
-                width: parent.width
-                label: "Posição da faixa"
-                maximum: root.controller.player && root.controller.player.length > 0 ? root.controller.player.length : 1
-                value: root.displayedPosition
-                enabled: root.controller.canSeek
-                foreground: root.foreground; accent: root.accent
-                onStarted: root.seekTrack = root.controller.trackKey
-                onCommitted: function(value) { root.controller.seekTo(value, root.seekTrack || root.controller.trackKey); root.seekTrack = ""; root.refreshPosition(); }
-            }
+            x: 14; y: 12; width: parent.width - 28; spacing: 6
             Row {
-                width: parent.width
-                Text { width: parent.width / 2; text: Util.formatTime(seek.dragging ? seek.liveValue : root.displayedPosition); color: Colors.alpha(root.foreground, 0.7); font.family: root.fontFamily; font.pixelSize: 10 }
-                Text { width: parent.width / 2; horizontalAlignment: Text.AlignRight; text: root.controller.player && root.controller.player.lengthSupported ? Util.formatTime(root.controller.player.length) : "—"; color: Colors.alpha(root.foreground, 0.7); font.family: root.fontFamily; font.pixelSize: 10 }
-            }
-            Row {
-                anchors.horizontalCenter: parent.horizontalCenter; spacing: 12; height: 32
-                DeskbandButton { glyph: "󰒮"; label: "Faixa anterior"; enabled: !!(root.controller.player && root.controller.player.canGoPrevious); foreground: root.foreground; fontFamily: root.fontFamily; onClicked: root.controller.previous() }
-                DeskbandButton { glyph: root.controller.playing ? "󰏤" : "󰐊"; label: "Reproduzir / pausar"; selected: true; enabled: root.controller.canToggle; foreground: root.foreground; accent: root.accent; fontFamily: root.fontFamily; onClicked: root.controller.togglePlaying() }
-                DeskbandButton { glyph: "󰒭"; label: "Próxima faixa"; enabled: !!(root.controller.player && root.controller.player.canGoNext); foreground: root.foreground; fontFamily: root.fontFamily; onClicked: root.controller.next() }
-                DeskbandButton { glyph: "󰒟"; label: "Aleatório"; selected: !!(root.controller.player && root.controller.player.shuffle); enabled: root.controller.canShuffle; foreground: root.foreground; accent: root.accent; fontFamily: root.fontFamily; onClicked: root.controller.toggleShuffle() }
-            }
-            Row {
-                width: parent.width; spacing: 10
-                Text { width: 18; anchors.verticalCenter: parent.verticalCenter; text: "󰕾"; font.family: root.fontFamily; color: root.foreground; font.pixelSize: 16 }
-                DeskbandSlider {
-                    width: parent.width - 70
-                    label: "Volume do player"
-                    value: root.controller.volume
-                    enabled: root.controller.canVolume
-                    foreground: root.foreground; accent: root.accent
-                    onStarted: root.volumePlayer = root.controller.player
-                    onCommitted: function(value) { root.controller.setVolume(value, root.volumePlayer); root.volumePlayer = null; }
+                width: parent.width; height: 26
+                Column {
+                    width: parent.width - 36; spacing: 2
+                    Text { width: parent.width; text: "Músicas carregadas"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: 14; font.weight: Font.DemiBold }
+                    Text { width: parent.width; text: root.playlistStatus; color: Colors.alpha(root.foreground, 0.66); font.family: root.fontFamily; font.pixelSize: 10; elide: Text.ElideRight }
                 }
-                Text { width: 32; anchors.verticalCenter: parent.verticalCenter; text: root.controller.canVolume ? Math.round(root.controller.volume * 100) + "%" : "—"; color: Colors.alpha(root.foreground, 0.7); font.family: root.fontFamily; font.pixelSize: 10 }
+                DeskbandButton { width: 30; height: 26; glyph: "×"; label: "Fechar"; foreground: root.foreground; onClicked: root.closeRequested() }
             }
+            ListView {
+                width: parent.width; height: 294; clip: true; model: playlistModel; spacing: 2
+                ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+                delegate: Rectangle {
+                    required property int index
+                    required property int number
+                    required property string title
+                    width: ListView.view.width; height: 34; radius: 6
+                    color: rowHover.containsMouse ? Colors.alpha(root.foreground, 0.08) : "transparent"
+                    Row {
+                        anchors.fill: parent; anchors.leftMargin: 8; anchors.rightMargin: 8; spacing: 10
+                        Text { width: 24; height: parent.height; verticalAlignment: Text.AlignVCenter; text: String(number).padStart(2, "0"); color: Colors.alpha(root.foreground, 0.5); font.family: root.fontFamily; font.pixelSize: 10 }
+                        Text { width: parent.width - 42; height: parent.height; verticalAlignment: Text.AlignVCenter; text: title; textFormat: Text.PlainText; elide: Text.ElideRight; color: root.foreground; font.family: root.fontFamily; font.pixelSize: 11 }
+                    }
+                    MouseArea { id: rowHover; anchors.fill: parent; hoverEnabled: true; acceptedButtons: Qt.NoButton }
+                }
+            }
+            Text { width: parent.width; text: "Exibe a playlist salva pelo Amberol; a ordem aleatória do player não é publicada."; wrapMode: Text.WordWrap; color: Colors.alpha(root.foreground, 0.58); font.family: root.fontFamily; font.pixelSize: 9 }
         }
     }
 }

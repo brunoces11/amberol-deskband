@@ -9,11 +9,12 @@ Item {
     property color foreground: "#eeeeee"
     property color accent: "#e5b567"
     property string label: ""
+    property bool compact: false
     readonly property bool dragging: mouse.pressed
     readonly property real fraction: Math.max(0, Math.min(1, liveValue / Math.max(0.001, maximum)))
     signal started()
     signal committed(real value)
-    implicitHeight: 28
+    implicitHeight: compact ? 10 : 28
     activeFocusOnTab: true
     Accessible.role: Accessible.Slider
     Accessible.name: label
@@ -22,12 +23,12 @@ Item {
     function at(x) { return Math.max(0, Math.min(1, x / Math.max(1, width))) * maximum; }
     Keys.onLeftPressed: committed(Math.max(0, value - maximum / 100))
     Keys.onRightPressed: committed(Math.min(maximum, value + maximum / 100))
-    Rectangle { anchors.verticalCenter: parent.verticalCenter; width: parent.width; height: 4; radius: 2; color: Colors.alpha(root.foreground, 0.18) }
-    Rectangle { anchors.verticalCenter: parent.verticalCenter; width: parent.width * root.fraction; height: 4; radius: 2; color: root.accent }
+    Rectangle { anchors.verticalCenter: parent.verticalCenter; width: parent.width; height: root.compact ? 3 : 4; radius: height / 2; color: Colors.alpha(root.foreground, 0.18) }
+    Rectangle { anchors.verticalCenter: parent.verticalCenter; width: parent.width * root.fraction; height: root.compact ? 3 : 4; radius: height / 2; color: root.accent }
     Rectangle {
         anchors.verticalCenter: parent.verticalCenter
         x: Math.max(0, Math.min(root.width - width, root.width * root.fraction - width / 2))
-        width: 12; height: 12; radius: 6
+        width: root.compact ? 8 : 12; height: width; radius: width / 2
         color: root.foreground
         border.width: root.activeFocus ? 2 : 0
         border.color: root.accent

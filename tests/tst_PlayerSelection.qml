@@ -36,4 +36,17 @@ TestCase {
         compare(Util.formatTime(-1), "0:00");
         compare(Util.formatTime(3601), "1:00:01");
     }
+    function test_saved_playlist_parses_unicode_paths_and_order() {
+        var tracks = Util.parseSavedPlaylist("[playlist]\r\nNumberOfEntries=2\r\nFile0=/music/01 Anunciação.m4a\r\nFile1=/music/02 Céu Azul.mp3\r\n");
+        compare(tracks.length, 2);
+        compare(tracks[0].number, 1);
+        compare(tracks[0].title, "01 Anunciação");
+        compare(tracks[1].title, "02 Céu Azul");
+    }
+    function test_saved_playlist_skips_missing_entries() {
+        var tracks = Util.parseSavedPlaylist("NumberOfEntries=3\nFile0=/music/a.ogg\nFile2=/music/c.flac\n");
+        compare(tracks.length, 2);
+        compare(tracks[1].number, 3);
+        compare(Util.parseSavedPlaylist("").length, 0);
+    }
 }
