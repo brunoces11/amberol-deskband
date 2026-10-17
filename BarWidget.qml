@@ -69,7 +69,7 @@ Item {
     }
 
     Component.onCompleted: {
-        if (media.playing || (compact && media.hasMedia)) {
+        if (compact && media.hasMedia) {
             isExpanded = true
         }
     }
