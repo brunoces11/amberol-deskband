@@ -38,7 +38,7 @@ Item {
 
     onVerticalChanged: close()
     function close() { opened = false; }
-    function togglePanel() { if (media.hasMedia) opened = !opened; }
+    function togglePanel() { opened = !opened; }
 
     function handleIconClicked() {
         isExpanded = !isExpanded

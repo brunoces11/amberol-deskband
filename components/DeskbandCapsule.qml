@@ -333,7 +333,7 @@ Item {
                 height: root.compact ? 20 : 22
                 anchors.verticalCenter: parent.verticalCenter
                 glyph: root.popupOpen ? "⌄" : "⌃"
-                label: "Expandir player"
+                label: root.popupOpen ? "Ocultar Menu" : "Exibir Menu"
                 selected: root.popupOpen
                 foreground: root.foreground
                 accent: root.accent

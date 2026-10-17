@@ -95,16 +95,28 @@ PopupWindow {
         Column {
             x: 14; y: 12; width: parent.width - 28; spacing: 6
             Row {
-                width: parent.width; height: 26
+                width: parent.width
+                height: 32
                 Column {
-                    width: parent.width - 36; spacing: 2
-                    Text { width: parent.width; text: "Músicas carregadas"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: 14; font.weight: Font.DemiBold }
+                    id: headerColumn
+                    width: parent.width - 34
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 2
+                    Text { width: parent.width; text: "Músicas carregadas"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: 13; font.weight: Font.DemiBold }
                     Text { width: parent.width; text: root.playlistStatus; color: Colors.alpha(root.foreground, 0.66); font.family: root.fontFamily; font.pixelSize: 10; elide: Text.ElideRight }
                 }
-                DeskbandButton { width: 30; height: 26; glyph: "×"; label: "Fechar"; foreground: root.foreground; onClicked: root.closeRequested() }
+                DeskbandButton {
+                    width: 28
+                    height: 28
+                    anchors.verticalCenter: parent.verticalCenter
+                    glyph: "×"
+                    label: "Fechar"
+                    foreground: root.foreground
+                    onClicked: root.closeRequested()
+                }
             }
             ListView {
-                width: parent.width; height: 294; clip: true; model: playlistModel; spacing: 1
+                width: parent.width; height: 288; clip: true; model: playlistModel; spacing: 1
                 ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
                 delegate: Rectangle {
                     required property int index
