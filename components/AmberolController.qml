@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 import Quickshell.Services.Pipewire
 import Quickshell.Services.Mpris
 import "AmberolController.js" as Util
@@ -41,16 +42,48 @@ Item {
     readonly property string volumeBackend: amberolSelected ? "PipeWire" : "MPRIS"
     PwObjectTracker { objects: root.audioStreams }
     readonly property bool canShuffle: !!(player && player.canControl && player.shuffleSupported && (!amberolSelected || amberolShuffleEnabled))
-    readonly property bool canToggle: !!(player && (player.canTogglePlaying || (playing ? player.canPause : player.canPlay)))
+    readonly property bool canToggle: !!(player && (player.canControl || player.canTogglePlaying || player.canPlay || player.canPause || hasMedia))
 
     function togglePlaying() {
         var p = player;
         if (!p) return false;
-        if (p.canTogglePlaying) p.togglePlaying();
-        else if (p.isPlaying && p.canPause) p.pause();
-        else if (!p.isPlaying && p.canPlay) p.play();
-        else return false;
-        return true;
+        if (p.isPlaying) {
+            if (p.canPause) {
+                p.pause();
+                return true;
+            }
+            if (p.canTogglePlaying) {
+                p.togglePlaying();
+                return true;
+            }
+            if (p.dbusName && p.dbusName.length > 0) {
+                Quickshell.execDetached(["busctl", "--user", "call", p.dbusName, "/org/mpris/MediaPlayer2", "org.mpris.MediaPlayer2.Player", "Pause"]);
+                return true;
+            }
+            return false;
+        } else {
+            // Amberol when Stopped advertises canPlay=false in MPRIS, which causes
+            // Quickshell's C++ MprisPlayer to reject pl.play() and pl.togglePlaying().
+            // For Amberol, or whenever canPlay/canTogglePlaying are false,
+            // calling Play directly via D-Bus starts playback reliably.
+            if (amberolSelected && p.dbusName && p.dbusName.length > 0) {
+                Quickshell.execDetached(["busctl", "--user", "call", p.dbusName, "/org/mpris/MediaPlayer2", "org.mpris.MediaPlayer2.Player", "Play"]);
+                return true;
+            }
+            if (p.canPlay) {
+                p.play();
+                return true;
+            }
+            if (p.canTogglePlaying) {
+                p.togglePlaying();
+                return true;
+            }
+            if (p.dbusName && p.dbusName.length > 0) {
+                Quickshell.execDetached(["busctl", "--user", "call", p.dbusName, "/org/mpris/MediaPlayer2", "org.mpris.MediaPlayer2.Player", "Play"]);
+                return true;
+            }
+            return false;
+        }
     }
     function previous() { if (!player || !player.canGoPrevious) return false; player.previous(); return true; }
     function next() { if (!player || !player.canGoNext) return false; player.next(); return true; }
