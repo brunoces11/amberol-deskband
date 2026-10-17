@@ -20,6 +20,9 @@ PopupWindow {
     property string playlistStatus: "Carregando playlist do Amberol…"
     property string playlistPath: (Quickshell.env("XDG_CACHE_HOME") || (Quickshell.env("HOME") + "/.cache")) + "/amberol/playlists/current.pls"
     property bool triedFlatpakCache: false
+    property string configPath: (Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")) + "/amberol-deskband/config.json"
+    property string currentFolder: ""
+    property string currentFolderName: ""
     ListModel { id: playlistModel }
     readonly property var anchorWindow: anchorItem ? anchorItem.QsWindow.window : null
     readonly property string position: hostBar && hostBar.position ? hostBar.position : "top"
@@ -31,6 +34,27 @@ PopupWindow {
             return;
         }
         playlistFile.reload();
+    }
+    function updateConfigData(content) {
+        try {
+            var data = JSON.parse(content);
+            if (data && data.default_folder) {
+                root.currentFolder = data.default_folder;
+                var parts = data.default_folder.split("/").filter(function(p) { return p.length > 0; });
+                root.currentFolderName = parts.length > 0 ? parts[parts.length - 1] : data.default_folder;
+            } else {
+                root.currentFolder = "";
+                root.currentFolderName = "";
+            }
+        } catch (e) {
+            root.currentFolder = "";
+            root.currentFolderName = "";
+        }
+    }
+    function launchSelectFolder() {
+        var script = Qt.resolvedUrl("../scripts/select_folder.py").toString().replace(/^file:\/\//, "");
+        Quickshell.execDetached(["python3", script]);
+        root.closeRequested();
     }
     function loadPlaylist(contents) {
         playlistModel.clear();
@@ -44,7 +68,20 @@ PopupWindow {
     color: "transparent"
     implicitWidth: 340
     implicitHeight: 390
-    onOpenChanged: if (open) refreshPlaylist()
+    onOpenChanged: {
+        if (open) {
+            refreshPlaylist();
+            configFile.reload();
+        }
+    }
+    FileView {
+        id: configFile
+        path: root.configPath
+        watchChanges: true
+        printErrors: false
+        onLoaded: root.updateConfigData(text())
+        onFileChanged: if (root.open) reload()
+    }
     FileView {
         id: playlistFile
         path: root.playlistPath
@@ -116,7 +153,7 @@ PopupWindow {
                 }
             }
             ListView {
-                width: parent.width; height: 288; clip: true; model: playlistModel; spacing: 1
+                width: parent.width; height: 275; clip: true; model: playlistModel; spacing: 1
                 ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
                 delegate: Rectangle {
                     required property int index
@@ -134,7 +171,74 @@ PopupWindow {
                     }
                 }
             }
-            Text { width: parent.width; text: "Exibe a playlist salva pelo Amberol; a ordem aleatória do player não é publicada."; wrapMode: Text.WordWrap; color: Colors.alpha(root.foreground, 0.58); font.family: root.fontFamily; font.pixelSize: 9 }
+            Rectangle {
+                id: loadFolderBtn
+                width: parent.width
+                height: 36
+                radius: 7
+                color: loadFolderArea.pressed ? Colors.alpha(root.accent, 0.25) :
+                       loadFolderArea.containsMouse ? Colors.alpha(root.accent, 0.15) :
+                       Colors.alpha(root.foreground, 0.08)
+                border.width: 1
+                border.color: loadFolderArea.containsMouse ? Colors.alpha(root.accent, 0.8) : Colors.alpha(root.foreground, 0.18)
+
+                Behavior on color { ColorAnimation { duration: 120 } }
+                Behavior on border.color { ColorAnimation { duration: 120 } }
+
+                MouseArea {
+                    id: loadFolderArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.launchSelectFolder()
+                }
+
+                Row {
+                    anchors.fill: parent
+                    anchors.leftMargin: 10
+                    anchors.rightMargin: 10
+                    spacing: 9
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: "󰉋"
+                        font.family: root.fontFamily
+                        font.pixelSize: 17
+                        color: root.accent
+                    }
+
+                    Column {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: parent.width - 56
+                        spacing: 1
+
+                        Text {
+                            text: "Load Folder"
+                            font.family: root.fontFamily
+                            font.pixelSize: 11
+                            font.weight: Font.DemiBold
+                            color: root.foreground
+                        }
+
+                        Text {
+                            width: parent.width
+                            text: root.currentFolderName.length > 0 ? ("Pasta: " + root.currentFolderName) : "Selecionar pasta local de músicas"
+                            font.family: root.fontFamily
+                            font.pixelSize: 9
+                            color: Colors.alpha(root.foreground, 0.65)
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: "⌕"
+                        font.family: root.fontFamily
+                        font.pixelSize: 13
+                        color: Colors.alpha(root.foreground, 0.5)
+                    }
+                }
+            }
         }
     }
 }

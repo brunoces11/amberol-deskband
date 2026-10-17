@@ -49,7 +49,12 @@ Item {
         if (media.hasMedia) {
             media.togglePlaying()
         } else {
-            Quickshell.execDetached(["/usr/bin/amberol"])
+            var folder = popup ? popup.currentFolder : ""
+            if (folder && folder.length > 0) {
+                Quickshell.execDetached(["amberol", folder])
+            } else {
+                Quickshell.execDetached(["amberol"])
+            }
         }
     }
 
