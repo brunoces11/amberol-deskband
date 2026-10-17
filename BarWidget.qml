@@ -50,7 +50,7 @@ Item {
     }
 
     function handleIconRightClicked() {
-        Quickshell.execDetached(["hyprctl", "dispatch", "focuswindow", "class:io.bassi.Amberol"])
+        root.togglePanel()
     }
 
     function handleIconMiddleClicked() {
