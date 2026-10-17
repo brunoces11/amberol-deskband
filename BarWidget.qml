@@ -41,17 +41,15 @@ Item {
     function togglePanel() { if (media.hasMedia) opened = !opened; }
 
     function handleIconClicked() {
-        if (!isExpanded) {
-            isExpanded = true
-            if (media.hasMedia) {
-                if (!media.playing) media.togglePlaying()
-            } else {
-                Quickshell.execDetached(["/usr/bin/amberol"])
-            }
+        isExpanded = !isExpanded
+        if (!isExpanded) root.close()
+    }
+
+    function handleIconAltClicked() {
+        if (media.hasMedia) {
+            media.togglePlaying()
         } else {
-            if (media.playing) media.togglePlaying()
-            isExpanded = false
-            root.close()
+            Quickshell.execDetached(["/usr/bin/amberol"])
         }
     }
 
@@ -80,14 +78,14 @@ Item {
         target: media
         function onHasMediaChanged() {
             if (media.hasMedia) {
-                if (media.playing || root.compact) root.isExpanded = true
+                if (root.compact) root.isExpanded = true
             } else {
                 root.isExpanded = false
                 root.close()
             }
         }
         function onPlayingChanged() {
-            if (media.playing && !root.isExpanded) {
+            if (media.playing && root.compact && !root.isExpanded) {
                 root.isExpanded = true
             }
         }
@@ -135,6 +133,7 @@ Item {
         popupOpen: root.opened
         displayedPosition: root.displayedPosition
         onIconClicked: root.handleIconClicked()
+        onIconAltClicked: root.handleIconAltClicked()
         onIconRightClicked: root.handleIconRightClicked()
         onIconMiddleClicked: root.handleIconMiddleClicked()
         onExpandRequested: root.togglePanel()

@@ -28,6 +28,7 @@ Item {
     readonly property real controlButtonHeight: root.controlIconSize + root.controlButtonVerticalPadding * 2
 
     signal iconClicked()
+    signal iconAltClicked()
     signal iconRightClicked()
     signal iconMiddleClicked()
     signal expandRequested()
@@ -83,7 +84,11 @@ Item {
             acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
             onClicked: function(mouse) {
                 if (mouse.button === Qt.LeftButton) {
-                    root.iconClicked()
+                    if (mouse.modifiers & Qt.AltModifier) {
+                        root.iconAltClicked()
+                    } else {
+                        root.iconClicked()
+                    }
                 } else if (mouse.button === Qt.RightButton) {
                     root.iconRightClicked()
                 } else if (mouse.button === Qt.MiddleButton) {
@@ -92,9 +97,9 @@ Item {
             }
             onEntered: {
                 if (root.hostBar && typeof root.hostBar.showTooltip === "function") {
-                    var tip = root.isExpanded
-                        ? (root.controller.title ? (root.controller.title + " (Clique: Pausar e Recolher)") : "Amberol (Pausar e Recolher)")
-                        : "Amberol (Tocar e Expandir)"
+                    var titleInfo = root.controller.title ? (root.controller.title + "\n") : ""
+                    var tip = titleInfo + "Clique: " + (root.isExpanded ? "Recolher (Ultra Compacto)" : "Expandir (Compacto)") +
+                        " • Alt+Clique: " + (root.controller.playing ? "Pausar" : "Tocar")
                     root.hostBar.showTooltip(iconMouse, tip)
                 }
             }
