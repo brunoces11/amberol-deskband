@@ -385,7 +385,7 @@ Item {
 
             Text {
                 width: parent.width
-                text: root.controller.title || "Amberol"
+                text: root.controller.title ? root.controller.title : (root.controller.defaultFolder ? "Amberol (Pronto)" : "Amberol")
                 textFormat: Text.PlainText
                 elide: Text.ElideRight
                 color: root.foreground
@@ -396,7 +396,7 @@ Item {
             Text {
                 width: parent.width
                 visible: !root.compact
-                text: root.controller.artist || ""
+                text: root.controller.artist ? root.controller.artist : (root.controller.defaultFolder ? (root.controller.defaultFolder.split("/").filter(function(s){return s.length>0}).pop() || "") : "")
                 textFormat: Text.PlainText
                 elide: Text.ElideRight
                 color: Colors.alpha(root.foreground, 0.64)

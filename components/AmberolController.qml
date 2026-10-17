@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Services.Pipewire
 import Quickshell.Services.Mpris
 import "AmberolController.js" as Util
@@ -9,6 +10,26 @@ Item {
     visible: false
     property bool fallbackEnabled: true
     property bool amberolShuffleEnabled: false
+    property string defaultFolder: ""
+    readonly property string configPath: (Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")) + "/amberol-deskband/config.json"
+
+    FileView {
+        id: configFile
+        path: root.configPath
+        watchChanges: true
+        printErrors: false
+        onLoaded: {
+            try {
+                var d = JSON.parse(text());
+                if (d && d.default_folder) root.defaultFolder = d.default_folder;
+                else root.defaultFolder = "";
+            } catch (e) {
+                root.defaultFolder = "";
+            }
+        }
+        onFileChanged: reload()
+    }
+
     readonly property var players: Mpris.players.values
     readonly property var player: Util.selectPlayer(players, fallbackEnabled)
     readonly property bool hasMedia: Util.hasTrack(player)
@@ -42,11 +63,18 @@ Item {
     readonly property string volumeBackend: amberolSelected ? "PipeWire" : "MPRIS"
     PwObjectTracker { objects: root.audioStreams }
     readonly property bool canShuffle: !!(player && player.canControl && player.shuffleSupported && (!amberolSelected || amberolShuffleEnabled))
-    readonly property bool canToggle: !!(player && (player.canControl || player.canTogglePlaying || player.canPlay || player.canPause || hasMedia))
+    readonly property bool canToggle: !!(hasMedia || (player && (player.canControl || player.canTogglePlaying || player.canPlay || player.canPause)) || (defaultFolder && defaultFolder.length > 0))
 
     function togglePlaying() {
         var p = player;
-        if (!p) return false;
+        if (!p || !hasMedia) {
+            if (defaultFolder && defaultFolder.length > 0) {
+                var script = Qt.resolvedUrl("../scripts/select_folder.py").toString().replace(/^file:\/\//, "");
+                Quickshell.execDetached(["python3", script, "--play-default"]);
+                return true;
+            }
+            if (!p) return false;
+        }
         if (p.isPlaying) {
             if (p.canPause) {
                 p.pause();
