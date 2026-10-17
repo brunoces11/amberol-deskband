@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Shapes
 import Quickshell
 import "AmberolController.js" as Colors
 
@@ -65,15 +66,127 @@ Item {
             Behavior on color { ColorAnimation { duration: 120 } }
         }
 
-        Image {
-            id: amberolIcon
+        Item {
+            id: dynamicIconContainer
             anchors.centerIn: parent
-            width: root.compact ? 18 : 22
-            height: root.compact ? 18 : 22
-            source: Quickshell.iconPath("io.bassi.Amberol", true) || "file:///usr/share/icons/hicolor/scalable/apps/io.bassi.Amberol.svg"
-            sourceSize: Qt.size(24, 24)
-            smooth: true
-            mipmap: true
+            width: root.compact ? 20 : 24
+            height: root.compact ? 20 : 24
+
+            // Estado Stand-by / Pause: Círculo branco vazado com 29% de opacidade + Seta de Play
+            Item {
+                id: pauseVisual
+                anchors.fill: parent
+                opacity: root.controller.playing ? 0.0 : 1.0
+                scale: root.controller.playing ? 0.72 : 1.0
+                Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+                Behavior on scale { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: width / 2
+                    color: "transparent"
+                    border.width: root.compact ? 2 : 2.5
+                    border.color: Qt.rgba(1, 1, 1, 0.29)
+                }
+
+                Shape {
+                    id: playArrow
+                    anchors.centerIn: parent
+                    anchors.horizontalCenterOffset: root.compact ? 1 : 1.2
+                    width: root.compact ? 7 : 8.5
+                    height: root.compact ? 8 : 10
+                    ShapePath {
+                        strokeColor: "transparent"
+                        fillColor: Qt.rgba(1, 1, 1, 0.88)
+                        startX: 0
+                        startY: 0
+                        PathLine { x: playArrow.width; y: playArrow.height / 2 }
+                        PathLine { x: 0; y: playArrow.height }
+                        PathLine { x: 0; y: 0 }
+                    }
+                }
+            }
+
+            // Estado Play / Tocando: Mini Equalizer com 3 barrinhas animadas e degradê deslizante
+            Item {
+                id: playVisual
+                anchors.fill: parent
+                opacity: root.controller.playing ? 1.0 : 0.0
+                scale: root.controller.playing ? 1.0 : 0.72
+                Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+                Behavior on scale { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+
+                property real shimmerPhase: 0.0
+                NumberAnimation on shimmerPhase {
+                    from: 0.0
+                    to: 1.0
+                    duration: 2200
+                    loops: Animation.Infinite
+                    running: root.controller.playing
+                }
+
+                function barColor(index) {
+                    var wave = 0.5 + 0.5 * Math.sin(playVisual.shimmerPhase * 6.28318 - index * 1.15)
+                    return Qt.tint(root.accent, Qt.rgba(1, 1, 1, wave * 0.35))
+                }
+
+                Row {
+                    anchors.centerIn: parent
+                    spacing: root.compact ? 1.5 : 2
+                    height: root.compact ? 12 : 14
+
+                    // Barra 1
+                    Rectangle {
+                        anchors.bottom: parent.bottom
+                        width: root.compact ? 2 : 2.5
+                        radius: width / 2
+                        color: playVisual.barColor(0)
+                        height: root.compact ? 4 : 5
+                        SequentialAnimation on height {
+                            running: root.controller.playing
+                            loops: Animation.Infinite
+                            NumberAnimation { to: root.compact ? 11 : 13; duration: 380; easing.type: Easing.InOutQuad }
+                            NumberAnimation { to: root.compact ? 4 : 5; duration: 320; easing.type: Easing.InOutQuad }
+                            NumberAnimation { to: root.compact ? 8 : 10; duration: 280; easing.type: Easing.InOutQuad }
+                            NumberAnimation { to: root.compact ? 3 : 4; duration: 360; easing.type: Easing.InOutQuad }
+                        }
+                    }
+
+                    // Barra 2 (Central)
+                    Rectangle {
+                        anchors.bottom: parent.bottom
+                        width: root.compact ? 2 : 2.5
+                        radius: width / 2
+                        color: playVisual.barColor(1)
+                        height: root.compact ? 6 : 8
+                        SequentialAnimation on height {
+                            running: root.controller.playing
+                            loops: Animation.Infinite
+                            NumberAnimation { to: root.compact ? 5 : 6; duration: 290; easing.type: Easing.InOutQuad }
+                            NumberAnimation { to: root.compact ? 12 : 14; duration: 420; easing.type: Easing.InOutQuad }
+                            NumberAnimation { to: root.compact ? 6 : 8; duration: 310; easing.type: Easing.InOutQuad }
+                            NumberAnimation { to: root.compact ? 11 : 13; duration: 340; easing.type: Easing.InOutQuad }
+                        }
+                    }
+
+                    // Barra 3
+                    Rectangle {
+                        anchors.bottom: parent.bottom
+                        width: root.compact ? 2 : 2.5
+                        radius: width / 2
+                        color: playVisual.barColor(2)
+                        height: root.compact ? 3 : 4
+                        SequentialAnimation on height {
+                            running: root.controller.playing
+                            loops: Animation.Infinite
+                            NumberAnimation { to: root.compact ? 10 : 11; duration: 350; easing.type: Easing.InOutQuad }
+                            NumberAnimation { to: root.compact ? 3 : 3; duration: 400; easing.type: Easing.InOutQuad }
+                            NumberAnimation { to: root.compact ? 10 : 12; duration: 300; easing.type: Easing.InOutQuad }
+                            NumberAnimation { to: root.compact ? 5 : 6; duration: 370; easing.type: Easing.InOutQuad }
+                        }
+                    }
+                }
+            }
         }
 
         MouseArea {
