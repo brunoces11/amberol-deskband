@@ -9,6 +9,8 @@ Item {
     property color accent: "#e5b567"
     property string fontFamily: "sans-serif"
     property real glyphScale: 1
+    property real horizontalPadding: 0
+    property real verticalPadding: 0
     property bool selected: false
     property var hostBar: null
     property var registeredHost: null
@@ -34,19 +36,23 @@ Item {
     Keys.onReturnPressed: triggerPress(Qt.LeftButton)
     Rectangle {
         anchors.fill: parent
-        radius: 5
+        radius: Math.min(5, height / 2)
         color: root.selected ? Colors.alpha(root.accent, 0.22) : Colors.alpha(root.foreground, mouse.containsMouse || root.activeFocus ? 0.12 : 0)
         border.width: root.activeFocus ? 1 : 0
         border.color: root.accent
     }
     Text {
         anchors.fill: parent
+        anchors.leftMargin: root.horizontalPadding > 0 ? root.horizontalPadding : 0
+        anchors.rightMargin: root.horizontalPadding > 0 ? root.horizontalPadding : 0
+        anchors.topMargin: root.verticalPadding > 0 ? root.verticalPadding : 0
+        anchors.bottomMargin: root.verticalPadding > 0 ? root.verticalPadding : 0
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         text: root.glyph
         textFormat: Text.PlainText
         font.family: root.fontFamily
-        font.pixelSize: Math.min(16 * root.glyphScale, root.height - 4)
+        font.pixelSize: 16 * root.glyphScale
         color: root.selected ? root.accent : root.foreground
     }
     MouseArea {
