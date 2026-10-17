@@ -195,9 +195,21 @@ Item {
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+            property bool altPressedAtDown: false
+
+            onPressed: function(mouse) {
+                altPressedAtDown = (mouse.modifiers & (Qt.AltModifier | Qt.MetaModifier | Qt.GroupSwitchModifier)) !== 0
+            }
+
+            onCanceled: {
+                altPressedAtDown = false
+            }
+
             onClicked: function(mouse) {
                 if (mouse.button === Qt.LeftButton) {
-                    if (mouse.modifiers & Qt.AltModifier) {
+                    var hasAlt = altPressedAtDown || ((mouse.modifiers & (Qt.AltModifier | Qt.MetaModifier | Qt.GroupSwitchModifier)) !== 0)
+                    altPressedAtDown = false
+                    if (hasAlt) {
                         root.iconAltClicked()
                     } else {
                         root.iconClicked()

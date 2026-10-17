@@ -69,25 +69,18 @@ Item {
     }
 
     Component.onCompleted: {
-        if (compact && media.hasMedia) {
-            isExpanded = true
-        }
     }
 
     Connections {
         target: media
         function onHasMediaChanged() {
-            if (media.hasMedia) {
-                if (root.compact) root.isExpanded = true
-            } else {
+            if (!media.hasMedia) {
                 root.isExpanded = false
                 root.close()
             }
         }
         function onPlayingChanged() {
-            if (media.playing && root.compact && !root.isExpanded) {
-                root.isExpanded = true
-            }
+            // Mudancas de reproducao nunca devem alterar o estado de expansao do painel.
         }
         function onPlayerChanged() { root.close(); }
         function onTrackKeyChanged() { root.displayedPosition = media.player ? media.player.position : 0; }

@@ -61,7 +61,8 @@ ShellRoot {
     QtObject { id: host; property bool vertical: false; property int barSize: 24; property string position: "top"; property color foreground: "white"; property string fontFamily: "sans-serif" }
     IpcHandler {
         target: "fixture"
-        function status(): string { return JSON.stringify({media:widget.controller.hasMedia,width:widget.implicitWidth,playing:widget.controller.playing,compact:widget.compact,player:widget.controller.player!==null}); }
+        function status(): string { return JSON.stringify({media:widget.controller.hasMedia,width:widget.implicitWidth,playing:widget.controller.playing,compact:widget.compact,player:widget.controller.player!==null,isExpanded:widget.isExpanded}); }
+        function toggleExpand(): string { widget.handleIconClicked(); return JSON.stringify({expanded:widget.isExpanded}); }
     }
 }
 """.replace("REPO_URL", ROOT.as_uri())
@@ -88,17 +89,23 @@ ShellRoot {
                 print("PASS: empty player stays collapsed",flush=True)
                 update("Metadata",GLib.Variant("a{sv}",{"xesam:title":GLib.Variant("s","Fixture track"),"mpris:length":GLib.Variant("x",60000000)}))
                 update("PlaybackStatus",GLib.Variant("s","Playing"))
-                wait_state(lambda s:s.get("media") and s.get("playing") and s.get("width")==218.4 and s.get("compact"))
-                print("PASS: track discovery expands compact top layout",flush=True)
+                wait_state(lambda s:s.get("media") and s.get("playing") and s.get("width")==32 and s.get("compact") and not s.get("isExpanded"))
+                print("PASS: playing track stays in ultra-compact icon mode without auto-expanding",flush=True)
+                subprocess.run(["qs", "ipc", "-p", directory, "call", "fixture", "toggleExpand"], check=True)
+                wait_state(lambda s:s.get("media") and s.get("playing") and s.get("width")==218.4 and s.get("isExpanded"))
+                print("PASS: clicking icon expands to compact controls mode",flush=True)
                 update("PlaybackStatus",GLib.Variant("s","Paused"))
-                wait_state(lambda s:s.get("media") and not s.get("playing") and s.get("width")==218.4)
-                print("PASS: paused track stays available",flush=True)
+                wait_state(lambda s:s.get("media") and not s.get("playing") and s.get("width")==218.4 and s.get("isExpanded"))
+                print("PASS: paused track stays available and maintains expansion state",flush=True)
+                subprocess.run(["qs", "ipc", "-p", directory, "call", "fixture", "toggleExpand"], check=True)
+                wait_state(lambda s:s.get("media") and not s.get("playing") and s.get("width")==32 and not s.get("isExpanded"))
+                print("PASS: clicking icon collapses back to ultra-compact mode",flush=True)
                 request("ReleaseName")
                 wait_state(lambda s:not s.get("player") and s.get("width")==0)
                 print("PASS: player disappearance collapses cleanly",flush=True)
                 request("RequestName")
-                wait_state(lambda s:s.get("media") and s.get("width")==218.4)
-                print("PASS: player reconnection restores capsule",flush=True)
+                wait_state(lambda s:s.get("media") and s.get("width")==32 and not s.get("isExpanded"))
+                print("PASS: player reconnection restores in ultra-compact state",flush=True)
             finally:
                 process.terminate()
                 process.wait(timeout=5)
