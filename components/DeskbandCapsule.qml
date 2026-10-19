@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Shapes
 import Quickshell
+import Quickshell.Services.Mpris
 import "AmberolController.js" as Colors
 
 Item {
@@ -318,7 +319,9 @@ Item {
                 height: root.compact ? 20 : 22
                 anchors.verticalCenter: parent.verticalCenter
                 glyph: "󰒟"
-                label: root.controller.canShuffle ? "Alternar aleatório" : "Aleatório indisponível neste player"
+                label: root.controller.canShuffle
+                    ? (root.controller.player.shuffle ? "Desativar aleatório" : "Ativar aleatório")
+                    : "Aleatório indisponível neste player"
                 enabled: root.controller.canShuffle
                 selected: !!(root.controller.player && root.controller.player.shuffle)
                 foreground: root.foreground
@@ -327,6 +330,21 @@ Item {
                 glyphScale: 0.85
                 hostBar: root.hostBar
                 onClicked: root.controller.toggleShuffle()
+            }
+            DeskbandButton {
+                width: root.buttonSize
+                height: root.compact ? 20 : 22
+                anchors.verticalCenter: parent.verticalCenter
+                glyph: root.controller.repeatGlyph
+                label: root.controller.repeatLabel
+                enabled: root.controller.canRepeat
+                selected: root.controller.loopState !== MprisLoopState.None
+                foreground: root.foreground
+                accent: root.accent
+                fontFamily: root.fontFamily
+                glyphScale: 0.85
+                hostBar: root.hostBar
+                onClicked: root.controller.toggleRepeat()
             }
             DeskbandButton {
                 width: root.buttonSize

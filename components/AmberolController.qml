@@ -9,7 +9,6 @@ Item {
     id: root
     visible: false
     property bool fallbackEnabled: true
-    property bool amberolShuffleEnabled: false
     property string defaultFolder: ""
     readonly property string configPath: (Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")) + "/amberol-deskband/config.json"
 
@@ -62,7 +61,13 @@ Item {
     readonly property real volume: amberolSelected ? (amberolStreams.length ? amberolStreams[0].audio.volume : 0) : (player ? player.volume : 0)
     readonly property string volumeBackend: amberolSelected ? "PipeWire" : "MPRIS"
     PwObjectTracker { objects: root.audioStreams }
-    readonly property bool canShuffle: !!(player && player.canControl && player.shuffleSupported && (!amberolSelected || amberolShuffleEnabled))
+    readonly property bool canShuffle: !!(player && player.canControl && player.shuffleSupported && (!amberolSelected || player.identity === "Amberol Deskband"))
+    readonly property bool canRepeat: !!(player && player.canControl && player.loopSupported)
+    readonly property int loopState: player && player.loopSupported ? player.loopState : MprisLoopState.None
+    readonly property string repeatLabel: loopState === MprisLoopState.Track
+        ? "Repetir esta faixa"
+        : (loopState === MprisLoopState.Playlist ? "Repetir playlist" : "Repetição desativada")
+    readonly property string repeatGlyph: loopState === MprisLoopState.Track ? "󰑘" : "󰑖"
     readonly property bool canToggle: !!(hasMedia || (player && (player.canControl || player.canTogglePlaying || player.canPlay || player.canPause)) || (defaultFolder && defaultFolder.length > 0))
 
     function togglePlaying() {
@@ -116,6 +121,14 @@ Item {
     function previous() { if (!player || !player.canGoPrevious) return false; player.previous(); return true; }
     function next() { if (!player || !player.canGoNext) return false; player.next(); return true; }
     function toggleShuffle() { if (!canShuffle) return false; player.shuffle = !player.shuffle; return true; }
+    function toggleRepeat() {
+        if (!canRepeat) return false;
+        var nextState = MprisLoopState.None;
+        if (player.loopState === MprisLoopState.None) nextState = MprisLoopState.Playlist;
+        else if (player.loopState === MprisLoopState.Playlist) nextState = MprisLoopState.Track;
+        player.loopState = nextState;
+        return true;
+    }
     function setVolume(value, expectedPlayer) {
         if (!isFinite(Number(value)) || !canVolume || (expectedPlayer && expectedPlayer !== player)) return false;
         var clamped = Math.max(0, Math.min(1, value));

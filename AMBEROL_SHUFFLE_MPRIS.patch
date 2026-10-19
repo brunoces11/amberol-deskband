@@ -1,0 +1,115 @@
+--- a/src/audio/controller.rs
++++ b/src/audio/controller.rs
+@@ -11,0 +12 @@
++    fn set_shuffle(&self, shuffled: bool);
+--- a/src/audio/inhibit_controller.rs
++++ b/src/audio/inhibit_controller.rs
+@@ -58,0 +59 @@
++    fn set_shuffle(&self, _shuffled: bool) {}
+--- a/src/audio/mpris_controller.rs
++++ b/src/audio/mpris_controller.rs
+@@ -29 +29 @@
+-            .identity("Amberol")
++            .identity("Amberol Deskband")
+@@ -37 +37,2 @@
+-            .can_set_fullscreen(false);
++            .can_set_fullscreen(false)
++            .shuffle(false);
+@@ -177,0 +179,14 @@
++
++    fn set_shuffle(&self, shuffled: bool) {
++        glib::spawn_future_local(clone!(
++            #[weak(rename_to = mpris)]
++            self.mpris,
++            async move {
++                if let Some(mpris) = mpris.get() {
++                    if let Err(err) = mpris.set_shuffle(shuffled).await {
++                        error!("Unable to set MPRIS shuffle state: {err:?}");
++                    }
++                }
++            }
++        ));
++    }
+@@ -276,0 +292,10 @@
++            }
++        }
++    ));
++
++    mpris.connect_set_shuffle(clone!(
++        #[strong]
++        sender,
++        move |_, shuffled| {
++            if let Err(e) = sender.send_blocking(PlaybackAction::Shuffle(shuffled)) {
++                error!("Unable to send Shuffle({shuffled}): {e}");
+--- a/src/audio/player.rs
++++ b/src/audio/player.rs
+@@ -33,0 +34 @@
++    Shuffle(bool),
+@@ -191,0 +193 @@
++            PlaybackAction::Shuffle(shuffled) => self.update_shuffle(shuffled),
+@@ -499,0 +502,15 @@
++        }
++    }
++
++    pub fn set_shuffled(&self, shuffled: bool) {
++        self.update_shuffle(shuffled);
++    }
++
++    fn update_shuffle(&self, shuffled: bool) {
++        if self.queue.is_shuffled() == shuffled {
++            return;
++        }
++
++        self.queue.set_shuffled(shuffled);
++        for controller in &self.controllers {
++            controller.set_shuffle(shuffled);
+--- a/src/audio/queue.rs
++++ b/src/audio/queue.rs
+@@ -11 +11 @@
+-    use glib::{ParamSpec, ParamSpecEnum, ParamSpecObject, ParamSpecUInt, Value};
++    use glib::{ParamSpec, ParamSpecBoolean, ParamSpecEnum, ParamSpecObject, ParamSpecUInt, Value};
+@@ -53,0 +54 @@
++                    ParamSpecBoolean::builder("shuffled").read_only().build(),
+@@ -64,0 +66 @@
++                "shuffled" => self.shuffled.get().to_value(),
+@@ -287,0 +290 @@
++            self.notify("shuffled");
+--- a/src/audio/waveform_generator.rs
++++ b/src/audio/waveform_generator.rs
+@@ -78,0 +79 @@
++    fn set_shuffle(&self, _shuffled: bool) {}
+--- a/src/window.rs
++++ b/src/window.rs
+@@ -96,0 +97 @@
++        pub notify_shuffle_id: RefCell<Option<glib::SignalHandlerId>>,
+@@ -265,0 +267 @@
++                notify_shuffle_id: RefCell::new(None),
+@@ -443,0 +446,6 @@
++    fn sync_playlist_shuffled(&self, shuffled: bool) {
++        if shuffled != self.imp().playlist_shuffled.replace(shuffled) {
++            self.notify("playlist-shuffled");
++        }
++    }
++
+@@ -453 +461 @@
+-                queue.set_shuffled(shuffled);
++                player.set_shuffled(shuffled);
+@@ -844,0 +853,14 @@
++
++            let notify_shuffle_id = queue.connect_notify_local(
++                Some("shuffled"),
++                clone!(
++                    #[weak(rename_to = win)]
++                    self,
++                    move |queue, _| {
++                        win.sync_playlist_shuffled(queue.is_shuffled());
++                    }
++                ),
++            );
++            self.imp()
++                .notify_shuffle_id
++                .replace(Some(notify_shuffle_id));
+@@ -854,0 +877,3 @@
++                queue.disconnect(id);
++            }
++            if let Some(id) = self.imp().notify_shuffle_id.take() {

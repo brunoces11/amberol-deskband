@@ -1,6 +1,6 @@
 # Amberol Deskband
 
-A single music capsule for **Omarchy Quattro** and the customized **WinDoc / Omarchy Dock** host. Track and artist, previous/play/next, compact seek and a popup listing the playlist saved by Amberol. Written in QML, using Quickshell services; no changes to Amberol are required.
+A single music capsule for **Omarchy Quattro** and the customized **WinDoc / Omarchy Dock** host. Track and artist, previous/play/next, shuffle, repeat modes, compact seek and a popup listing the playlist saved by Amberol. Written in QML, using Quickshell services.
 
 ![Amberol Deskband running in WinDoc](preview.png)
 
@@ -38,13 +38,24 @@ Amberol takes priority while running, including when paused. An open Amberol wit
 
 For the top bar, the JSON layout entry accepts `width` (up to 374.4 pixels) and `fallback` (boolean). A compact default is 218.4 pixels (minimum 200) and a full default is 265.2 pixels (minimum 240). The capsule uses a neutral gray background 15% brighter than its previous surface, with 3.4-pixel spacing between items. The same QML components are used by both hosts.
 
-## Amberol 2026.1 protocol limits
+## Shuffle and repeat on Amberol 2026.1
 
-This Amberol version advertises MPRIS properties that do not have working setters. The implementation was checked against the actual running player and the [official 2026.1 MPRIS controller source](https://gitlab.gnome.org/World/amberol/-/blob/2026.1/src/audio/mpris_controller.rs).
+Amberol already owns the in-memory queue and implements shuffle and repeat internally. Version 2026.1 exposes repeat through MPRIS, but does not connect MPRIS Shuffle to that queue. `AMBEROL_SHUFFLE_MPRIS.patch` adds that bridge while keeping Amberol's queue as the sole source of playback order.
+
+On this Omarchy setup, `./BUILD_AMBEROL_LOCAL.sh` builds Amberol 2026.1 into `~/.local/lib/amberol-deskband`; it does not replace `/usr/bin/amberol` or require administrator access. The existing user wrapper prefers the custom binary when present and falls back to the packaged player otherwise. `./BUILD_AMBEROL_LOCAL.sh --restore-stock` switches the wrapper back to the packaged binary.
+
+The build needs Rust/Cargo, Meson, Ninja, Blueprint Compiler, pkgconf, GTK 4, libadwaita, GStreamer development libraries, gettext and the standard GLib build tools. On Arch Linux, install the system dependencies with:
+
+```bash
+sudo pacman -S --needed rust cargo meson ninja blueprint-compiler pkgconf gtk4 libadwaita gstreamer gst-plugins-base gst-plugins-bad gettext glib2
+```
+
+Rust/Cargo can also come from rustup. The plugin itself remains MIT-licensed. `AMBEROL_SHUFFLE_MPRIS.patch` is for Amberol 2026.1 and is distributed for use under Amberol's GPL-3.0-or-later terms; the built player stays in the user's home directory and does not replace the system package.
 
 - **Volume:** uses only Amberol's identified PipeWire playback streams. The system output volume is never changed. Other players use their MPRIS volume. If Amberol has no audio stream yet, the volume control is disabled until playback creates one.
 - **Seek:** uses relative MPRIS `Seek` for Amberol, because `SetPosition` is not implemented. After switching tracks while paused, the decoder may not have a stream yet; seek becomes available after playback initializes it. Other players use absolute position.
-- **Shuffle:** the stock Amberol 2026.1 does not implement MPRIS shuffle commands or publish its shuffle state. The shuffle button is disabled for this version. Supported fallback players retain their MPRIS shuffle button. A future/custom Amberol build with a complete MPRIS implementation may opt in with the top-bar setting `amberolMprisShuffle: true`; this option is not suitable for stock 2026.1.
+- **Shuffle:** the custom Amberol build reads and writes MPRIS Shuffle and applies it to the existing queue. Other controllable MPRIS players use their own Shuffle property. The state is published back to the panel and Amberol's native playlist UI.
+- **Repeat:** cycles through no repeat, repeat playlist and repeat current track through MPRIS LoopStatus. The button is enabled only when the selected player reports loop support.
 
 The compact progress display updates locally every 500 ms while the capsule is visible and playback is active. The playlist uses Quickshell's file watcher instead of a polling loop. Metadata uses native service bindings. There is no continuous process polling and no promise of literally zero CPU during rendering or animations.
 

@@ -106,7 +106,7 @@ Item {
         if (bar && typeof bar.releasePopout === "function") bar.releasePopout(root);
     }
 
-    AmberolController { id: media; fallbackEnabled: root.settings.fallback !== false; amberolShuffleEnabled: root.settings.amberolMprisShuffle === true }
+    AmberolController { id: media; fallbackEnabled: root.settings.fallback !== false }
 
     DeskbandCapsule {
         id: capsule
