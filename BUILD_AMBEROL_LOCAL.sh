@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 PATCH_FILE="$SCRIPT_DIR/AMBEROL_SHUFFLE_MPRIS.patch"
+HEADLESS_PATCH_FILE="$SCRIPT_DIR/AMBEROL_HEADLESS.patch"
 VERSION="2026.1"
 ARCHIVE_SHA256="2112eebac5c7b0aab7243c428c794aecb136168c326648cfbbd8654ea2cc7631"
 CACHE_ROOT="${XDG_CACHE_HOME:-$HOME/.cache}/amberol-deskband"
@@ -62,7 +63,7 @@ for dependency in gtk4 libadwaita-1 gstreamer-1.0 gstreamer-audio-1.0 gstreamer-
 done
 
 if [[ -e "$SOURCE_DIR" ]]; then
-    expected_marker="$ARCHIVE_SHA256 $(sha256sum "$PATCH_FILE" | cut -d' ' -f1)"
+    expected_marker="$ARCHIVE_SHA256 $(sha256sum "$PATCH_FILE" | cut -d' ' -f1) $(sha256sum "$HEADLESS_PATCH_FILE" | cut -d' ' -f1)"
     if [[ ! -f "$SOURCE_DIR/.deskband-source-marker" ]] || [[ "$(cat "$SOURCE_DIR/.deskband-source-marker")" != "$expected_marker" ]]; then
         echo "A fonte em $SOURCE_DIR não corresponde ao patch esperado; preservada sem alterações." >&2
         exit 1
@@ -83,10 +84,11 @@ else
     mkdir -p "$source_stage"
     tar --extract --gzip --strip-components=1 --file="$archive" --directory="$source_stage"
     patch --batch --forward --directory="$source_stage" --strip=1 --input="$PATCH_FILE"
-    printf '%s\n' "$ARCHIVE_SHA256 $(sha256sum "$PATCH_FILE" | cut -d' ' -f1)" > "$source_stage/.deskband-source-marker"
+    patch --batch --forward --directory="$source_stage" --strip=1 --input="$HEADLESS_PATCH_FILE"
+    printf '%s\n' "$ARCHIVE_SHA256 $(sha256sum "$PATCH_FILE" | cut -d' ' -f1) $(sha256sum "$HEADLESS_PATCH_FILE" | cut -d' ' -f1)" > "$source_stage/.deskband-source-marker"
     mv -- "$source_stage" "$SOURCE_DIR"
     test -f "$SOURCE_DIR/.deskband-source-marker"
-    echo "VERIFICADO: fonte oficial extraída e patch MPRIS aplicado."
+    echo "VERIFICADO: fonte oficial extraída e patches MPRIS/headless aplicados."
 fi
 
 if [[ -f "$BUILD_DIR/meson-private/coredata.dat" ]]; then
@@ -106,4 +108,4 @@ if [[ "$selected" != "$CUSTOM_BIN" ]]; then
     echo "Falha: o wrapper seleciona $selected em vez do build local." >&2
     exit 1
 fi
-echo "VERIFICADO: Amberol $VERSION com Shuffle MPRIS instalado em $CUSTOM_BIN."
+echo "VERIFICADO: Amberol $VERSION com MPRIS e modo sem janela instalado em $CUSTOM_BIN."

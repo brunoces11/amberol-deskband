@@ -1,0 +1,22 @@
+--- a/src/application.rs
++++ b/src/application.rs
+@@ -190,10 +190,16 @@
+             window.upcast()
+         };
+ 
+-        #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+-        self.request_background();
++        let headless = std::env::var("AMBEROL_DESKBAND_HEADLESS")
++            .map(|value| value == "1")
++            .unwrap_or(false);
+ 
+-        window.present();
++        if !headless {
++            #[cfg(any(target_os = "linux", target_os = "freebsd"))]
++            self.request_background();
++
++            window.present();
++        }
+     }
+ 
+     fn setup_gactions(&self) {
