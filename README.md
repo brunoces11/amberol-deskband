@@ -42,6 +42,8 @@ For the top bar, the JSON layout entry accepts `width` (up to 374.4 pixels) and 
 
 Amberol already owns the in-memory queue and implements shuffle and repeat internally. Version 2026.1 exposes repeat through MPRIS, but does not connect MPRIS Shuffle to that queue. `AMBEROL_SHUFFLE_MPRIS.patch` adds that bridge while keeping Amberol's queue as the sole source of playback order.
 
+When the WinDoc Load Folder action is used with the headless build, `AMBEROL_REPLACE_FOLDER.patch` clears Amberol's existing queue before loading the selected folder. The action waits until Amberol's saved playlist confirms the new folder, then starts playback. The normal GTK application keeps its original append-to-queue behavior.
+
 On this Omarchy setup, `./BUILD_AMBEROL_LOCAL.sh` builds Amberol 2026.1 into `~/.local/lib/amberol-deskband`; it does not replace `/usr/bin/amberol` or require administrator access. The existing user wrapper prefers the custom binary when present and falls back to the packaged player otherwise. `./BUILD_AMBEROL_LOCAL.sh --restore-stock` switches the wrapper back to the packaged binary. The custom build also honors `AMBEROL_DESKBAND_HEADLESS=1`: it accepts the folder over D-Bus and processes MPRIS Raise without presenting a GTK window, leaving the dock as the visible player interface.
 
 The build needs Rust/Cargo, Meson, Ninja, Blueprint Compiler, pkgconf, GTK 4, libadwaita, GStreamer development libraries, gettext and the standard GLib build tools. On Arch Linux, install the system dependencies with:

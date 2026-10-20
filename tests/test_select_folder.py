@@ -61,6 +61,43 @@ class TestSelectFolder(unittest.TestCase):
         finally:
             os.rmdir(test_dir)
 
+    def test_playlist_contains_folder_only_matches_queue_entries(self):
+        root = Path(self.temp_dir.name)
+        selected = root / "new music"
+        other = root / "old music"
+        selected.mkdir()
+        other.mkdir()
+        playlist = root / "current.pls"
+        playlist.write_text(
+            "[playlist]\nNumberOfEntries=2\n"
+            f"File0={other / 'old track.m4a'}\n"
+            f"File1={selected / 'new track.m4a'}\n",
+            encoding="utf-8",
+        )
+        select_folder.PLAYLIST_FILE = playlist
+
+        self.assertFalse(select_folder.playlist_contains_folder(str(selected)))
+        playlist.write_text(
+            f"[playlist]\nNumberOfEntries=1\nFile0={selected / 'new track.m4a'}\n",
+            encoding="utf-8",
+        )
+        self.assertTrue(select_folder.playlist_contains_folder(str(selected)))
+        self.assertFalse(select_folder.playlist_contains_folder(str(root / "missing")))
+
+    def test_wait_for_folder_queue_requires_newer_cache(self):
+        root = Path(self.temp_dir.name)
+        selected = root / "selected"
+        selected.mkdir()
+        playlist = root / "current.pls"
+        playlist.write_text(
+            f"[playlist]\nNumberOfEntries=1\nFile0={selected / 'track.m4a'}\n",
+            encoding="utf-8",
+        )
+        select_folder.PLAYLIST_FILE = playlist
+
+        self.assertFalse(select_folder.wait_for_folder_queue(str(selected), playlist.stat().st_mtime_ns, timeout=0.01))
+        self.assertTrue(select_folder.wait_for_folder_queue(str(selected), playlist.stat().st_mtime_ns - 1, timeout=0.01))
+
     def test_cli_get_and_set(self):
         script_path = SCRIPTS_DIR / "select_folder.py"
         test_dir = tempfile.mkdtemp()

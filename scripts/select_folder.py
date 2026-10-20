@@ -12,10 +12,12 @@ import os
 import subprocess
 import sys
 import time
+import configparser
 from pathlib import Path
 
 CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "amberol-deskband"
 CONFIG_FILE = CONFIG_DIR / "config.json"
+PLAYLIST_FILE = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "amberol" / "playlists" / "current.pls"
 
 
 def get_persisted_folder() -> str:
@@ -48,10 +50,55 @@ def is_amberol_running() -> bool:
     except Exception:
         pass
     try:
-        res = subprocess.run(["pgrep", "-f", "amberol"], capture_output=True)
+        res = subprocess.run(["pgrep", "-x", "amberol"], capture_output=True)
         return res.returncode == 0
     except Exception:
         return False
+
+
+def playlist_mtime_ns() -> int:
+    try:
+        return PLAYLIST_FILE.stat().st_mtime_ns
+    except OSError:
+        return 0
+
+
+def playlist_contains_folder(folder_path: str) -> bool:
+    """Return whether Amberol's saved current queue contains a track in folder."""
+    target = Path(folder_path).resolve()
+    parser = configparser.ConfigParser(interpolation=None)
+    parser.optionxform = str
+    try:
+        with PLAYLIST_FILE.open(encoding="utf-8") as playlist:
+            parser.read_file(playlist)
+        section = parser["playlist"]
+        count = int(section.get("NumberOfEntries", "0"))
+        if count == 0:
+            return False
+        for index in range(count):
+            entry = section.get(f"File{index}")
+            if not entry:
+                return False
+            track = Path(entry).resolve()
+            try:
+                track.relative_to(target)
+            except ValueError:
+                return False
+        return True
+    except (OSError, KeyError, ValueError, configparser.Error):
+        return False
+    return False
+
+
+def wait_for_folder_queue(folder_path: str, previous_mtime: int, timeout: float = 60.0) -> bool:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if playlist_mtime_ns() > previous_mtime and playlist_contains_folder(folder_path):
+            # Amberol writes the queue just before selecting its first track.
+            time.sleep(0.2)
+            return True
+        time.sleep(0.1)
+    return False
 
 
 def amberol_has_media() -> bool:
@@ -72,35 +119,50 @@ def open_in_amberol(folder_path: str, play: bool = False, wait_for_load: bool = 
         return True
 
     resolved_path = str(Path(folder_path).resolve())
+    if not Path(resolved_path).is_dir():
+        return False
     uri = Path(resolved_path).as_uri()
+    previous_mtime = playlist_mtime_ns()
 
     running = is_amberol_running()
     if running:
-        subprocess.run(
+        result = subprocess.run(
             ["busctl", "--user", "call", "io.bassi.Amberol",
              "/io/bassi/Amberol", "org.freedesktop.Application", "Open",
              "asa{sv}", "1", uri, "0"],
-            capture_output=True, text=True
+            capture_output=True, text=True, timeout=10
         )
+        if result.returncode != 0:
+            print(f"ERROR: Amberol rejected the selected folder: {result.stderr.strip()}", file=sys.stderr)
+            return False
     else:
-        local_amberol = Path.home() / ".local/bin/amberol"
-        amberol_bin = str(local_amberol) if local_amberol.is_file() and os.access(local_amberol, os.X_OK) else (
+        wrapper = Path.home() / ".local/bin/amberol"
+        local_amberol = Path.home() / ".local/lib/amberol-deskband/bin/amberol"
+        amberol_bin = str(wrapper) if wrapper.is_file() and os.access(wrapper, os.X_OK) else (
+            str(local_amberol) if local_amberol.is_file() and os.access(local_amberol, os.X_OK) else (
             "/usr/bin/amberol" if Path("/usr/bin/amberol").is_file() else "amberol"
+            )
         )
-        subprocess.Popen([amberol_bin, resolved_path], start_new_session=True)
+        try:
+            subprocess.Popen([amberol_bin, resolved_path], start_new_session=True)
+        except OSError as err:
+            print(f"ERROR: Could not start Amberol: {err}", file=sys.stderr)
+            return False
 
     if wait_for_load or play:
-        for _ in range(30):
-            if amberol_has_media():
-                break
-            time.sleep(0.1)
+        if not wait_for_folder_queue(resolved_path, previous_mtime):
+            print(f"ERROR: Amberol did not load a playlist from {resolved_path}.", file=sys.stderr)
+            return False
 
     if play:
-        subprocess.run(
+        result = subprocess.run(
             ["busctl", "--user", "call", "org.mpris.MediaPlayer2.io.bassi.Amberol",
              "/org/mpris/MediaPlayer2", "org.mpris.MediaPlayer2.Player", "Play"],
-            capture_output=True, text=True
+            capture_output=True, text=True, timeout=5
         )
+        if result.returncode != 0:
+            print(f"ERROR: Amberol loaded the folder but did not start playback: {result.stderr.strip()}", file=sys.stderr)
+            return False
     return True
 
 
@@ -122,7 +184,8 @@ def choose_folder(auto_play: bool = False) -> None:
                 path = folder.get_path()
                 if path and Path(path).is_dir():
                     save_persisted_folder(path)
-                    open_in_amberol(path, play=auto_play)
+                    if not open_in_amberol(path, play=auto_play):
+                        return
                     print(f"SELECTED:{path}")
         except GLib.GError:
             print("CANCELLED")
@@ -176,14 +239,16 @@ def main():
             print(f"ERROR: Not a directory: {args.set}", file=sys.stderr)
             sys.exit(1)
         save_persisted_folder(str(target))
-        open_in_amberol(str(target), play=args.play)
+        if not open_in_amberol(str(target), play=args.play):
+            sys.exit(1)
         print(f"SAVED:{target}")
         sys.exit(0)
 
     if args.play_default:
         folder = get_persisted_folder()
         if folder:
-            open_in_amberol(folder, play=True)
+            if not open_in_amberol(folder, play=True):
+                sys.exit(1)
             print(f"PLAYING:{folder}")
         sys.exit(0)
 
@@ -191,7 +256,8 @@ def main():
         if is_amberol_running() and not amberol_has_media():
             folder = get_persisted_folder()
             if folder:
-                open_in_amberol(folder, play=False)
+                if not open_in_amberol(folder, play=False):
+                    sys.exit(1)
                 print(f"LOADED:{folder}")
         sys.exit(0)
 

@@ -53,7 +53,7 @@ PopupWindow {
     }
     function launchSelectFolder() {
         var script = Qt.resolvedUrl("../scripts/select_folder.py").toString().replace(/^file:\/\//, "");
-        Quickshell.execDetached(["python3", script]);
+        Quickshell.execDetached(["python3", script, "--play"]);
         root.closeRequested();
     }
     function loadPlaylist(contents) {

@@ -1,0 +1,20 @@
+--- a/src/window.rs
++++ b/src/window.rs
+@@ -1510,8 +1510,17 @@
+     pub fn open_files(&self, files: &[gio::File]) {
+         if files.is_empty() {
+             self.add_toast(i18n("Unable to access files"));
+             return;
+         }
++
++        if std::env::var("AMBEROL_DESKBAND_HEADLESS")
++            .map(|value| value == "1")
++            .unwrap_or(false)
++        {
++            if let Some(player) = self.player() {
++                player.clear_queue();
++            }
++        }
+ 
+         let model = gio::ListStore::new::<gio::File>();
+         for f in files {

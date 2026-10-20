@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 PATCH_FILE="$SCRIPT_DIR/AMBEROL_SHUFFLE_MPRIS.patch"
 HEADLESS_PATCH_FILE="$SCRIPT_DIR/AMBEROL_HEADLESS.patch"
+REPLACE_FOLDER_PATCH_FILE="$SCRIPT_DIR/AMBEROL_REPLACE_FOLDER.patch"
 VERSION="2026.1"
 ARCHIVE_SHA256="2112eebac5c7b0aab7243c428c794aecb136168c326648cfbbd8654ea2cc7631"
 CACHE_ROOT="${XDG_CACHE_HOME:-$HOME/.cache}/amberol-deskband"
@@ -63,8 +64,13 @@ for dependency in gtk4 libadwaita-1 gstreamer-1.0 gstreamer-audio-1.0 gstreamer-
 done
 
 if [[ -e "$SOURCE_DIR" ]]; then
-    expected_marker="$ARCHIVE_SHA256 $(sha256sum "$PATCH_FILE" | cut -d' ' -f1) $(sha256sum "$HEADLESS_PATCH_FILE" | cut -d' ' -f1)"
-    if [[ ! -f "$SOURCE_DIR/.deskband-source-marker" ]] || [[ "$(cat "$SOURCE_DIR/.deskband-source-marker")" != "$expected_marker" ]]; then
+    expected_marker="$ARCHIVE_SHA256 $(sha256sum "$PATCH_FILE" | cut -d' ' -f1) $(sha256sum "$HEADLESS_PATCH_FILE" | cut -d' ' -f1) $(sha256sum "$REPLACE_FOLDER_PATCH_FILE" | cut -d' ' -f1)"
+    previous_marker="$ARCHIVE_SHA256 $(sha256sum "$PATCH_FILE" | cut -d' ' -f1) $(sha256sum "$HEADLESS_PATCH_FILE" | cut -d' ' -f1)"
+    if [[ -f "$SOURCE_DIR/.deskband-source-marker" ]] && [[ "$(cat "$SOURCE_DIR/.deskband-source-marker")" == "$previous_marker" ]]; then
+        patch --batch --forward --directory="$SOURCE_DIR" --strip=1 --input="$REPLACE_FOLDER_PATCH_FILE"
+        printf '%s\n' "$expected_marker" > "$SOURCE_DIR/.deskband-source-marker"
+        echo "VERIFICADO: patch de substituição de fila aplicado à fonte local previamente validada."
+    elif [[ ! -f "$SOURCE_DIR/.deskband-source-marker" ]] || [[ "$(cat "$SOURCE_DIR/.deskband-source-marker")" != "$expected_marker" ]]; then
         echo "A fonte em $SOURCE_DIR não corresponde ao patch esperado; preservada sem alterações." >&2
         exit 1
     fi
@@ -85,7 +91,8 @@ else
     tar --extract --gzip --strip-components=1 --file="$archive" --directory="$source_stage"
     patch --batch --forward --directory="$source_stage" --strip=1 --input="$PATCH_FILE"
     patch --batch --forward --directory="$source_stage" --strip=1 --input="$HEADLESS_PATCH_FILE"
-    printf '%s\n' "$ARCHIVE_SHA256 $(sha256sum "$PATCH_FILE" | cut -d' ' -f1) $(sha256sum "$HEADLESS_PATCH_FILE" | cut -d' ' -f1)" > "$source_stage/.deskband-source-marker"
+    patch --batch --forward --directory="$source_stage" --strip=1 --input="$REPLACE_FOLDER_PATCH_FILE"
+    printf '%s\n' "$ARCHIVE_SHA256 $(sha256sum "$PATCH_FILE" | cut -d' ' -f1) $(sha256sum "$HEADLESS_PATCH_FILE" | cut -d' ' -f1) $(sha256sum "$REPLACE_FOLDER_PATCH_FILE" | cut -d' ' -f1)" > "$source_stage/.deskband-source-marker"
     mv -- "$source_stage" "$SOURCE_DIR"
     test -f "$SOURCE_DIR/.deskband-source-marker"
     echo "VERIFICADO: fonte oficial extraída e patches MPRIS/headless aplicados."
